@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Cat, Heart, Info, Sparkles, Paw, Gift } from "lucide-react";
+import { Cat, Heart, Info, Sparkles, Paw, Gift, Sun, Moon, HelpCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +7,10 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Switch } from "@/components/ui/switch";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 const catImages = [
   "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/1200px-Cat03.jpg",
@@ -38,6 +42,10 @@ const Index = () => {
   const [factOfTheDay, setFactOfTheDay] = useState("");
   const [catName, setCatName] = useState("");
   const [showGift, setShowGift] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [catOfTheDay, setCatOfTheDay] = useState(null);
+  const [quizAnswer, setQuizAnswer] = useState("");
+  const [quizResult, setQuizResult] = useState("");
 
   useEffect(() => {
     const facts = [
@@ -48,6 +56,14 @@ const Index = () => {
       "They have an excellent sense of balance and flexible bodies.",
     ];
     setFactOfTheDay(facts[Math.floor(Math.random() * facts.length)]);
+
+    // Fetch Cat of the Day
+    fetch("https://api.thecatapi.com/v1/images/search?size=full")
+      .then(response => response.json())
+      .then(data => {
+        setCatOfTheDay(data[0]);
+      })
+      .catch(error => console.error("Error fetching cat of the day:", error));
   }, []);
 
   const generateCatName = () => {
@@ -55,8 +71,22 @@ const Index = () => {
     setCatName(randomName);
   };
 
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode);
+    document.documentElement.classList.toggle("dark");
+  };
+
+  const handleQuizSubmit = (event) => {
+    event.preventDefault();
+    if (quizAnswer.toLowerCase() === "whiskers") {
+      setQuizResult("Correct! Cats use their whiskers to gauge if they can fit through small spaces.");
+    } else {
+      setQuizResult("Sorry, that's not correct. The answer is whiskers. Cats use them to gauge if they can fit through small spaces.");
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-100 to-pink-100 p-8 overflow-hidden relative">
+    <div className={`min-h-screen ${isDarkMode ? 'bg-gradient-to-b from-gray-900 to-purple-900 text-white' : 'bg-gradient-to-b from-purple-100 to-pink-100'} p-8 overflow-hidden relative transition-colors duration-300`}>
       <motion.div
         className="absolute top-4 right-4 z-20"
         whileHover={{ scale: 1.1 }}
@@ -123,17 +153,40 @@ const Index = () => {
         ))}
       </div>
       <motion.div
+        className="fixed top-4 right-4 z-30 flex items-center space-x-4"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+      >
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Switch
+                checked={isDarkMode}
+                onCheckedChange={toggleTheme}
+                className="data-[state=checked]:bg-purple-600"
+              />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Toggle {isDarkMode ? "Light" : "Dark"} Mode</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        {isDarkMode ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+      </motion.div>
+
+      <motion.div
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         className="max-w-4xl mx-auto relative z-10"
       >
         <motion.h1 
-          className="text-6xl font-bold mb-8 text-center text-purple-800 flex items-center justify-center"
+          className={`text-6xl font-bold mb-8 text-center ${isDarkMode ? 'text-purple-300' : 'text-purple-800'} flex items-center justify-center`}
           whileHover={{ scale: 1.05 }}
         >
-          <Cat className="mr-3 text-pink-600" size={56} /> 
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-600">
+          <Cat className={`mr-3 ${isDarkMode ? 'text-pink-400' : 'text-pink-600'}`} size={56} /> 
+          <span className={`bg-clip-text text-transparent ${isDarkMode ? 'bg-gradient-to-r from-purple-400 to-pink-400' : 'bg-gradient-to-r from-purple-600 to-pink-600'}`}>
             Purrfect Felines
           </span>
         </motion.h1>
@@ -221,7 +274,7 @@ const Index = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.6, duration: 0.5 }}
           >
-            <Card className="bg-white/80 backdrop-blur-sm h-full hover:shadow-lg transition-shadow duration-300">
+            <Card className={`${isDarkMode ? 'bg-gray-800/80' : 'bg-white/80'} backdrop-blur-sm h-full hover:shadow-lg transition-shadow duration-300`}>
               <CardHeader>
                 <CardTitle className="text-2xl font-semibold flex items-center">
                   <Heart className="mr-2 text-red-500" /> Popular Cat Breeds
@@ -232,7 +285,7 @@ const Index = () => {
                   {catBreeds.map((breed, index) => (
                     <motion.div
                       key={breed.name}
-                      className="bg-white p-4 rounded-lg shadow-md transition-all duration-300 hover:shadow-xl"
+                      className={`${isDarkMode ? 'bg-gray-700' : 'bg-white'} p-4 rounded-lg shadow-md transition-all duration-300 hover:shadow-xl`}
                       whileHover={{ scale: 1.05 }}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -242,7 +295,7 @@ const Index = () => {
                         <img src={breed.image} alt={breed.name} className="w-16 h-16 rounded-full object-cover" />
                         <div>
                           <h3 className="font-semibold text-lg">{breed.name}</h3>
-                          <p className="text-gray-600">{breed.description}</p>
+                          <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{breed.description}</p>
                         </div>
                       </div>
                     </motion.div>
@@ -257,7 +310,7 @@ const Index = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.8, duration: 0.5 }}
           >
-            <Card className="bg-white/80 backdrop-blur-sm h-full hover:shadow-lg transition-shadow duration-300">
+            <Card className={`${isDarkMode ? 'bg-gray-800/80' : 'bg-white/80'} backdrop-blur-sm h-full hover:shadow-lg transition-shadow duration-300`}>
               <CardHeader>
                 <CardTitle className="text-2xl font-semibold">Cat Care Tips</CardTitle>
                 <CardDescription>Essential advice for cat owners</CardDescription>
@@ -291,6 +344,74 @@ const Index = () => {
             </Card>
           </motion.div>
         </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1, duration: 0.5 }}
+          className="mb-12"
+        >
+          <Card className={`${isDarkMode ? 'bg-gray-800/80' : 'bg-white/80'} backdrop-blur-sm hover:shadow-lg transition-shadow duration-300`}>
+            <CardHeader>
+              <CardTitle className="text-2xl font-semibold flex items-center">
+                <Sparkles className="mr-2 text-yellow-500" /> Cat of the Day
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {catOfTheDay && (
+                <div className="flex flex-col items-center">
+                  <img src={catOfTheDay.url} alt="Cat of the Day" className="w-full max-w-md h-64 object-cover rounded-lg shadow-md mb-4" />
+                  <p className="text-lg font-medium mb-2">Fun Fact:</p>
+                  <p className="text-center italic">{factOfTheDay}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.2, duration: 0.5 }}
+          className="mb-12"
+        >
+          <Card className={`${isDarkMode ? 'bg-gray-800/80' : 'bg-white/80'} backdrop-blur-sm hover:shadow-lg transition-shadow duration-300`}>
+            <CardHeader>
+              <CardTitle className="text-2xl font-semibold flex items-center">
+                <HelpCircle className="mr-2 text-blue-500" /> Cat Quiz
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleQuizSubmit}>
+                <p className="mb-4">What do cats use to determine if they can fit through small spaces?</p>
+                <RadioGroup value={quizAnswer} onValueChange={setQuizAnswer} className="mb-4">
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="paws" id="paws" />
+                    <Label htmlFor="paws">Paws</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="whiskers" id="whiskers" />
+                    <Label htmlFor="whiskers">Whiskers</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="tail" id="tail" />
+                    <Label htmlFor="tail">Tail</Label>
+                  </div>
+                </RadioGroup>
+                <Button type="submit">Submit Answer</Button>
+              </form>
+              {quizResult && (
+                <motion.p
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-4 p-2 bg-blue-100 text-blue-800 rounded"
+                >
+                  {quizResult}
+                </motion.p>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
       </motion.div>
     </div>
   );
